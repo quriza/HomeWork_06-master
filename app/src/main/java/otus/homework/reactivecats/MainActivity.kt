@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         view.findViewById<Button>(R.id.next_btn).setOnClickListener{
-            catsViewModel.getFacts()
+          //  catsViewModel.getFacts()
         }
 
 
