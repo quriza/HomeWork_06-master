@@ -2,6 +2,7 @@ package otus.homework.reactivecats
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Button
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -12,7 +13,6 @@ class MainActivity : AppCompatActivity() {
     private val diContainer = DiContainer()
     private val catsViewModel by viewModels<CatsViewModel> {
         CatsViewModelFactory(
-            diContainer.service,
             diContainer.localCatFactsGenerator(applicationContext),
             applicationContext
         )
@@ -29,12 +29,14 @@ class MainActivity : AppCompatActivity() {
                 ServerError -> Snackbar.make(view, "Network error", 1000).show()
             }
         }
+
+        view.findViewById<Button>(R.id.next_btn).setOnClickListener{
+            catsViewModel.getFacts()
+        }
+
+
     }
 
-    override fun onStop() {
-        if (isFinishing) {
-            this.catsViewModel.clear()
-        }
-        super.onStop()
-    }
+
+
 }

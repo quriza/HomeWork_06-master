@@ -10,11 +10,12 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
+
 
 class CatsViewModel(
-    catsService: CatsService,
-    localCatFactsGenerator: LocalCatFactsGenerator,
-    context: Context
+    val localCatFactsGenerator: LocalCatFactsGenerator,
+    val context: Context
 ) : ViewModel() {
 
     private val _catsLiveData = MutableLiveData<Result>()
@@ -22,39 +23,48 @@ class CatsViewModel(
     val compositeDisposable = CompositeDisposable()
 
     init {
-        compositeDisposable.add(
-            CatsApiClient.apiClient.observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subsribe({
+        getFacts()
+    }
 
-                    _catsLiveData.value = Success(it!!)
+    fun getFacts() {
+
+        compositeDisposable.add(
+
+            Observable.interval(2000, TimeUnit.MILLISECONDS).flatMap { _ ->
+                CatsApiClient.apiClient
+                    .getCatFact()
+                    .onErrorResumeNext { this.localCatFactsGenerator.generateCatFact() }
+                    .toObservable()
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe({
+                    _catsLiveData.value = Success(it)
                 }, {
-                        _catsLiveData.value = Error(it ?: context.getString(
-                                R.string.default_error_text
-                            )
+
+                    _catsLiveData.value = Error(
+                        it.message ?: this.context.getString(
+                            R.string.default_error_text
                         )
-                    }
-                )
+                    )
+                })
         )
 
     }
 
-    fun getFacts() {}
-
-    fun clear() {
+    override fun onCleared() {
         compositeDisposable.clear()
     }
 }
 
 class CatsViewModelFactory(
-    private val catsRepository: CatsService,
     private val localCatFactsGenerator: LocalCatFactsGenerator,
     private val context: Context
 ) :
     ViewModelProvider.NewInstanceFactory() {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T =
-        CatsViewModel(catsRepository, localCatFactsGenerator, context) as T
+        CatsViewModel( localCatFactsGenerator, context) as T
 }
 
 sealed class Result

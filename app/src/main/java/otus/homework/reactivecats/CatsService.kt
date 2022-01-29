@@ -1,7 +1,6 @@
 package otus.homework.reactivecats
 
 import retrofit2.http.GET
-import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 
 interface CatsService {
